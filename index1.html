@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        .server-message {
+            text-align: center;
+            border-radius: 5px;
+            padding: 2px 15px;
+            background-color: rgba(0, 50, 93, 0.43);
+        }
+
+        .other-message {
+            border-radius: 5px;
+            padding: 2px 15px;
+            background-color: rgba(255, 210, 30, 0.455);
+        }
+
+        .self-message {
+            text-align: right;
+            border-radius: 5px;
+            padding: 2px 15px;
+            background-color: rgba(234, 50, 255, 0.43);
+        }
+    </style>
+
+</head>
+<body>
+    <input type="text" id="messageInput">
+    <button id="sendButton">Send</button>
+    <div id="messages"></div>
+
+    <script>
+        const address = "ws://localhost:7890/chat";
+        const socket = new WebSocket(address);
+        var user;
+
+        //socket.onopen = () => showMessage("Connected to " + address);
+
+        socket.onmessage = (event) => {
+            let message = JSON.parse(event.data);
+            console.log(message);
+            if(message == null || message.Message == null) return;
+            if(message.Type == 1) { // Connected Type
+                user = message.User;
+                return
+            }
+
+            showMessage(message);
+        }
+
+        const messagesContainer = document.getElementById("messages");
+        function showMessage(message) {
+            const messageDiv = document.createElement("div");
+
+            if(message.Type == 0) { // From SERVER
+                messageDiv.classList.add("server-message");
+                messageText = message.Message + " " + message.Time;
+            }
+            else if(message.User.Id == user.Id) {
+                messageDiv.classList.add("self-message");
+                messageText = user.Name + ": " + message.Message + " " + message.Time;
+            }
+            else {
+                messageText = user.Name + ": " + message.Message + " " + message.Time;
+                messageDiv.classList.add("other-message");
+            }
+
+            messageDiv.innerText = messageText;
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        const sendButton = document.getElementById("sendButton");
+        const messageInput = document.getElementById("messageInput");
+
+        sendButton.addEventListener("click", () => {
+            const messageText = messageInput.value;
+            if(messageText === "") return;
+
+            var message = {
+                Message: messageText
+            }
+            socket.send(JSON.stringify(message));
+            messageInput.value = "";
+        });
+    </script>
+</body>
+</html>
